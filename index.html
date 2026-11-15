@@ -1,1 +1,870 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ระบบติดตามปัญหาระหว่างผลิต | KIM PAI PRINTING & PACKAGING</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=Montserrat:wght@400;500;600&family=Prompt:wght@300;400;500;600;700&family=Sarabun:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js & DataLabels Plugin -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
 
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Prompt', 'Sarabun', 'sans-serif'] },
+                    colors: {
+                        roseLuxury: { 50: '#FDF8F9', 100: '#FCE7F3', 200: '#FBCFE8', 300: '#F9A8D4', 400: '#F472B6', 500: '#EC4899', 600: '#DB2777', 700: '#BE185D', 800: '#9D174D', 900: '#831843' },
+                        goldChampagne: { 50: '#FFFBEB', 100: '#FEF3C7', 200: '#FDE68A', 300: '#FCD34D', 400: '#FBBF24', 500: '#F59E0B', 600: '#D97706', 700: '#B45309' }
+                    },
+                    boxShadow: {
+                        'luxury': '0 10px 30px -5px rgba(190, 24, 93, 0.08), 0 4px 12px -2px rgba(217, 119, 6, 0.05)',
+                        'gold-glow': '0 4px 20px -2px rgba(245, 158, 11, 0.25)',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background-color: #FDF8F9;
+            background-image: radial-gradient(circle at 10% 10%, rgba(252, 231, 243, 0.7) 0%, transparent 40%),
+                              radial-gradient(circle at 90% 85%, rgba(254, 243, 199, 0.6) 0%, transparent 40%);
+            color: #331D2C;
+        }
+        .gold-border-gradient {
+            border: 1px solid transparent;
+            background: linear-gradient(#FFFFFF, #FFFFFF) padding-box,
+                        linear-gradient(135deg, #F9A8D4 0%, #F59E0B 50%, #BE185D 100%) border-box;
+        }
+        .header-gradient { background: linear-gradient(135deg, #831843 0%, #BE185D 55%, #B45309 100%); }
+        .btn-gold-rose {
+            background: linear-gradient(135deg, #BE185D 0%, #DB2777 60%, #D97706 100%);
+            transition: all 0.25s ease;
+        }
+        .btn-gold-rose:hover { transform: translateY(-1px); box-shadow: 0 8px 20px -4px rgba(190, 24, 93, 0.35); }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #FDF8F9; }
+        ::-webkit-scrollbar-thumb { background: #F472B6; border-radius: 9999px; }
+        @media print {
+            .no-print { display: none !important; }
+            body { background: #FFFFFF !important; }
+            .shadow-luxury { box-shadow: none !important; border: 1px solid #E5E7EB !important; }
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col antialiased selection:bg-roseLuxury-200 selection:text-roseLuxury-900">
+
+    <!-- Toast Notification Container -->
+    <div id="toastContainer" class="fixed top-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+    <!-- Top Luxury Header -->
+    <header class="header-gradient text-white shadow-lg sticky top-0 z-40">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+            <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                <div class="flex items-center gap-4">
+                    <div class="px-4 py-2 rounded-2xl bg-gradient-to-br from-[#FBF4E4] via-[#F5E4BE] to-[#ECD39E] border border-[#D4AF37]/80 shadow-gold-glow shrink-0 flex items-center justify-center">
+                        <svg width="168" height="44" viewBox="0 0 210 54" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="KIM PAI PRINTING & PACKAGING">
+                            <text x="105" y="31" text-anchor="middle" fill="#3B3E2B" style="font-family: 'Cinzel', serif; font-weight: 600; font-size: 32px; letter-spacing: 2.5px;">KIM PAI</text>
+                            <text x="105" y="47" text-anchor="middle" textLength="176" lengthAdjust="spacing" fill="#3B3E2B" style="font-family: 'Montserrat', sans-serif; font-weight: 500; font-size: 10.2px; letter-spacing: 1.4px;">PRINTING &amp; PACKAGING</text>
+                        </svg>
+                    </div>
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <span id="syncModeBadge" class="px-2.5 py-0.5 text-[11px] font-semibold tracking-wider uppercase rounded-full bg-amber-500/25 text-amber-200 border border-amber-400/40">
+                                🟡 โหมดข้อมูลตัวอย่าง (รอเชื่อมต่อชีต)
+                            </span>
+                        </div>
+                        <h1 class="text-lg sm:text-xl md:text-2xl font-bold tracking-tight text-white mt-0.5">
+                            ระบบติดตามปัญหาระหว่างผลิต (Live Dashboard)
+                        </h1>
+                    </div>
+                </div>
+
+                <!-- Navigation Header Buttons -->
+                <div class="flex flex-wrap items-center gap-2 no-print">
+                    <button type="button" onclick="switchTab('dashboard')" id="tab-dashboard" class="tab-btn active flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all bg-white text-roseLuxury-800 shadow-md">
+                        <i data-lucide="bar-chart-3" class="w-4 h-4 text-goldChampagne-600"></i>
+                        <span>สรุปข้อมูล</span>
+                    </button>
+                    <button type="button" onclick="switchTab('form')" id="tab-form" class="tab-btn flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all bg-white/15 text-white hover:bg-white/25 border border-white/20">
+                        <i data-lucide="plus-circle" class="w-4 h-4 text-goldChampagne-300"></i>
+                        <span>บันทึกแจ้งปัญหา</span>
+                    </button>
+                    <button type="button" onclick="switchTab('logs')" id="tab-logs" class="tab-btn flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all bg-white/15 text-white hover:bg-white/25 border border-white/20">
+                        <i data-lucide="table-2" class="w-4 h-4 text-goldChampagne-300"></i>
+                        <span>ประวัติทั้งหมด (<span id="totalBadgeCount">0</span>)</span>
+                    </button>
+                    <button type="button" onclick="openSheetsModal()" id="setupSheetsBtn" class="flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-bold transition-all bg-goldChampagne-400 hover:bg-goldChampagne-500 text-roseLuxury-900 shadow-lg border border-goldChampagne-200 animate-pulse">
+                        <i data-lucide="settings" class="w-4 h-4"></i>
+                        <span>⚙️ ตั้งค่าลิงก์ชีต</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Container -->
+    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+
+        <!-- TAB 1: EXECUTIVE DASHBOARD VIEW -->
+        <section id="view-dashboard" class="space-y-6">
+            <!-- Filter Bar -->
+            <div class="bg-white/90 backdrop-blur-md rounded-2xl p-4 sm:p-5 shadow-luxury border border-roseLuxury-200/70 no-print space-y-3.5">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2.5 border-b border-roseLuxury-100">
+                    <div class="flex items-center gap-2 text-roseLuxury-800 font-semibold text-sm">
+                        <div class="w-8 h-8 rounded-lg bg-roseLuxury-100 flex items-center justify-center text-roseLuxury-700">
+                            <i data-lucide="sliders-horizontal" class="w-4 h-4"></i>
+                        </div>
+                        <span>ตัวกรองข้อมูลนำเสนอ:</span>
+                    </div>
+                    <div class="flex flex-wrap items-center gap-1.5">
+                        <button type="button" onclick="setDatePreset('ALL')" id="preset-ALL" class="date-preset-btn px-2.5 py-1 rounded-lg text-xs font-semibold bg-roseLuxury-700 text-white shadow-sm transition">ทั้งหมด</button>
+                        <button type="button" onclick="setDatePreset('TODAY')" id="preset-TODAY" class="date-preset-btn px-2.5 py-1 rounded-lg text-xs font-semibold bg-roseLuxury-50 text-roseLuxury-800 hover:bg-roseLuxury-100 border border-roseLuxury-200 transition">วันนี้</button>
+                        <button type="button" onclick="setDatePreset('THIS_MONTH')" id="preset-THIS_MONTH" class="date-preset-btn px-2.5 py-1 rounded-lg text-xs font-semibold bg-roseLuxury-50 text-roseLuxury-800 hover:bg-roseLuxury-100 border border-roseLuxury-200 transition">เดือนนี้</button>
+                        <button type="button" onclick="fetchSheetData()" class="px-3 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold flex items-center gap-1 transition shadow-sm">
+                            <i data-lucide="refresh-cw" class="w-3 h-3"></i>
+                            <span>รีเฟรชข้อมูล</span>
+                        </button>
+                        <button type="button" onclick="window.print()" class="px-3 py-1 rounded-lg bg-roseLuxury-700 hover:bg-roseLuxury-800 text-white text-xs font-semibold flex items-center gap-1 transition shadow-sm">
+                            <i data-lucide="printer" class="w-3 h-3"></i>
+                            <span>PDF</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+                    <div>
+                        <label class="block text-[11px] font-medium text-gray-500 mb-1">ปี</label>
+                        <select id="filterYear" onchange="applyFilters()" class="w-full rounded-xl border border-roseLuxury-200 bg-roseLuxury-50/50 px-3 py-2 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-roseLuxury-500">
+                            <option value="ALL">ทุกปี</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-medium text-gray-500 mb-1">เดือน</label>
+                        <select id="filterMonth" onchange="applyFilters()" class="w-full rounded-xl border border-roseLuxury-200 bg-roseLuxury-50/50 px-3 py-2 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-roseLuxury-500">
+                            <option value="ALL">ทุกเดือน</option>
+                            <option value="01">มกราคม</option><option value="02">กุมภาพันธ์</option><option value="03">มีนาคม</option><option value="04">เมษายน</option>
+                            <option value="05">พฤษภาคม</option><option value="06">มิถุนายน</option><option value="07">กรกฎาคม</option><option value="08">สิงหาคม</option>
+                            <option value="09">กันยายน</option><option value="10">ตุลาคม</option><option value="11">พฤศจิกายน</option><option value="12">ธันวาคม</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-medium text-gray-500 mb-1">แผนก</label>
+                        <select id="filterDept" onchange="applyFilters()" class="w-full rounded-xl border border-roseLuxury-200 bg-roseLuxury-50/50 px-3 py-2 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-roseLuxury-500">
+                            <option value="ALL">ทุกแผนก</option>
+                            <option value="พิมพ์สี">พิมพ์สี</option><option value="อาบมันรีดเงา">อาบมันรีดเงา</option><option value="ปั๊ม">ปั๊ม</option><option value="ทั่วไป/แกะ">ทั่วไป/แกะ</option><option value="ขึ้นรูปกล่อง">ขึ้นรูปกล่อง</option><option value="คลังสินค้า">คลังสินค้า</option><option value="บริการลูกค้า">บริการลูกค้า</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-medium text-gray-500 mb-1">กะการทำงาน</label>
+                        <select id="filterShift" onchange="applyFilters()" class="w-full rounded-xl border border-roseLuxury-200 bg-roseLuxury-50/50 px-3 py-2 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-roseLuxury-500">
+                            <option value="ALL">ทุกกะ</option>
+                            <option value="กะ A">กะ A</option><option value="กะ B">กะ B</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-medium text-gray-500 mb-1">สถานะ</label>
+                        <select id="filterStatus" onchange="applyFilters()" class="w-full rounded-xl border border-roseLuxury-200 bg-roseLuxury-50/50 px-3 py-2 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-roseLuxury-500">
+                            <option value="ALL">ทุกสถานะ</option>
+                            <option value="รอดำเนินการ">รอดำเนินการ</option><option value="กำลังแก้ไข/คัดแยก">กำลังแก้ไข/คัดแยก</option><option value="แก้ไขแล้ว/ปิดงาน">แก้ไขแล้ว/ปิดงาน</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- KPI Cards -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div class="gold-border-gradient rounded-2xl p-5 shadow-luxury relative overflow-hidden">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <p class="text-xs font-semibold uppercase tracking-wider text-roseLuxury-600">จำนวนเคสแจ้งปัญหา</p>
+                            <h3 id="kpiTotalCases" class="text-3xl font-bold text-gray-900 mt-1">0</h3>
+                        </div>
+                        <div class="w-11 h-11 rounded-xl bg-gradient-to-br from-roseLuxury-500 to-roseLuxury-700 text-white flex items-center justify-center shadow-md">
+                            <i data-lucide="alert-triangle" class="w-5 h-5"></i>
+                        </div>
+                    </div>
+                    <div class="mt-4 pt-3 border-t border-roseLuxury-100 flex items-center justify-between text-xs">
+                        <span class="px-2 py-0.5 rounded-md bg-roseLuxury-100 text-roseLuxury-800 font-medium">กะ A: <strong id="kpiShiftA">0</strong></span>
+                        <span class="px-2 py-0.5 rounded-md bg-goldChampagne-100 text-goldChampagne-700 font-medium">กะ B: <strong id="kpiShiftB">0</strong></span>
+                    </div>
+                </div>
+
+                <div class="gold-border-gradient rounded-2xl p-5 shadow-luxury relative overflow-hidden">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <p class="text-xs font-semibold uppercase tracking-wider text-goldChampagne-600">ของเสียรวม (แผ่น)</p>
+                            <div class="flex items-baseline gap-1.5 mt-1">
+                                <h3 id="kpiTotalSheets" class="text-3xl font-bold text-gray-900">0</h3>
+                                <span class="text-sm font-medium text-gray-500">แผ่น</span>
+                            </div>
+                        </div>
+                        <div class="w-11 h-11 rounded-xl bg-gradient-to-br from-goldChampagne-400 to-goldChampagne-600 text-white flex items-center justify-center shadow-md">
+                            <i data-lucide="layers" class="w-5 h-5"></i>
+                        </div>
+                    </div>
+                    <div class="mt-4 pt-3 border-t border-goldChampagne-100 text-xs text-gray-600">งานพิมพ์/อาบมัน/ปั๊ม</div>
+                </div>
+
+                <div class="gold-border-gradient rounded-2xl p-5 shadow-luxury relative overflow-hidden">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <p class="text-xs font-semibold uppercase tracking-wider text-roseLuxury-700">ของเสียรวม (ชิ้น)</p>
+                            <div class="flex items-baseline gap-1.5 mt-1">
+                                <h3 id="kpiTotalPieces" class="text-3xl font-bold text-gray-900">0</h3>
+                                <span class="text-sm font-medium text-gray-500">ชิ้น</span>
+                            </div>
+                        </div>
+                        <div class="w-11 h-11 rounded-xl bg-gradient-to-br from-pink-500 to-amber-500 text-white flex items-center justify-center shadow-md">
+                            <i data-lucide="box" class="w-5 h-5"></i>
+                        </div>
+                    </div>
+                    <div class="mt-4 pt-3 border-t border-roseLuxury-100 text-xs text-gray-600">งานแกะ/ขึ้นรูป/กล่อง</div>
+                </div>
+
+                <div class="gold-border-gradient rounded-2xl p-5 shadow-luxury relative overflow-hidden">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <p class="text-xs font-semibold uppercase tracking-wider text-emerald-700">อัตราการแก้ไข/ปิดงาน</p>
+                            <h3 id="kpiResolveRate" class="text-3xl font-bold text-gray-900 mt-1">0%</h3>
+                        </div>
+                        <div class="w-11 h-11 rounded-xl bg-gradient-to-br from-roseLuxury-600 to-amber-500 text-white flex items-center justify-center shadow-md">
+                            <i data-lucide="check-circle-2" class="w-5 h-5"></i>
+                        </div>
+                    </div>
+                    <div class="mt-4 pt-3 border-t border-roseLuxury-100 flex items-center justify-between text-xs">
+                        <span class="text-emerald-700 font-medium">ปิดแล้ว: <strong id="kpiClosedCount">0</strong></span>
+                        <span class="text-rose-600 font-medium">รอ: <strong id="kpiPendingCount">0</strong></span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Charts Grid -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div class="bg-white rounded-2xl p-5 shadow-luxury border border-roseLuxury-200/80">
+                    <h3 class="text-base font-bold text-gray-900 mb-3 flex items-center gap-2">
+                        <i data-lucide="cpu" class="w-5 h-5 text-roseLuxury-600"></i>
+                        <span>เครื่องจักรที่พบปัญหาสูงสุด</span>
+                    </h3>
+                    <div class="relative h-72 w-full"><canvas id="chartMachines"></canvas></div>
+                </div>
+                <div class="bg-white rounded-2xl p-5 shadow-luxury border border-roseLuxury-200/80">
+                    <h3 class="text-base font-bold text-gray-900 mb-3 flex items-center gap-2">
+                        <i data-lucide="alert-octagon" class="w-5 h-5 text-goldChampagne-600"></i>
+                        <span>ประเภทปัญหาที่พบมากที่สุด</span>
+                    </h3>
+                    <div class="relative h-72 w-full"><canvas id="chartDefects"></canvas></div>
+                </div>
+                <div class="bg-white rounded-2xl p-5 shadow-luxury border border-roseLuxury-200/80">
+                    <h3 class="text-base font-bold text-gray-900 mb-3 flex items-center gap-2">
+                        <i data-lucide="user-cog" class="w-5 h-5 text-roseLuxury-600"></i>
+                        <span>ผู้ที่ผลิตงาน</span>
+                    </h3>
+                    <div class="relative h-72 w-full"><canvas id="chartOperators"></canvas></div>
+                </div>
+                <div class="bg-white rounded-2xl p-5 shadow-luxury border border-roseLuxury-200/80">
+                    <h3 class="text-base font-bold text-gray-900 mb-3 flex items-center gap-2">
+                        <i data-lucide="user-check" class="w-5 h-5 text-goldChampagne-600"></i>
+                        <span>ผู้แจ้งข้อมูล (QC)</span>
+                    </h3>
+                    <div class="relative h-72 w-full"><canvas id="chartReporters"></canvas></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 2: REPORT NEW DEFECT FORM VIEW -->
+        <section id="view-form" class="hidden max-w-4xl mx-auto">
+            <div class="bg-white rounded-3xl shadow-luxury border border-roseLuxury-200 overflow-hidden">
+                <div class="header-gradient px-6 py-5 text-white flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-xl bg-white/15 border border-goldChampagne-300/50 flex items-center justify-center">
+                            <i data-lucide="file-plus-2" class="w-5 h-5 text-goldChampagne-300"></i>
+                        </div>
+                        <div>
+                            <h2 class="text-lg sm:text-xl font-bold">บันทึกข้อมูลการแจ้งปัญหาการผลิต (Live Submit)</h2>
+                            <p class="text-xs text-roseLuxury-100">ข้อมูลจะถูกส่งเข้า Google Sheets และอัปเดตหน้าเว็บทันที</p>
+                        </div>
+                    </div>
+                    <button type="button" onclick="switchTab('dashboard')" class="text-xs bg-white/15 hover:bg-white/25 px-3 py-1.5 rounded-lg border border-white/20 transition">กลับหน้าสรุป</button>
+                </div>
+
+                <form id="defectForm" onsubmit="handleFormSubmit(event)" class="p-6 sm:p-8 space-y-6">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-700 mb-1.5">วันที่พบปัญหา *</label>
+                            <input type="date" id="inpDate" required class="w-full rounded-xl border border-roseLuxury-200 px-3.5 py-2.5 text-sm bg-roseLuxury-50/30">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-700 mb-1.5">กะการทำงาน *</label>
+                            <div class="grid grid-cols-2 gap-2">
+                                <label class="cursor-pointer"><input type="radio" name="inpShift" value="กะ A" checked class="peer sr-only"><div class="text-center py-2.5 rounded-xl border border-roseLuxury-200 text-sm font-semibold text-gray-600 peer-checked:bg-roseLuxury-700 peer-checked:text-white transition">กะ A</div></label>
+                                <label class="cursor-pointer"><input type="radio" name="inpShift" value="กะ B" class="peer sr-only"><div class="text-center py-2.5 rounded-xl border border-roseLuxury-200 text-sm font-semibold text-gray-600 peer-checked:bg-goldChampagne-600 peer-checked:text-white transition">กะ B</div></label>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-700 mb-1.5">แผนกที่พบปัญหา *</label>
+                            <select id="inpDept" required class="w-full rounded-xl border border-roseLuxury-200 px-3.5 py-2.5 text-sm bg-roseLuxury-50/30">
+                                <option value="">-- เลือกแผนก --</option>
+                                <option value="พิมพ์สี">พิมพ์สี</option><option value="อาบมันรีดเงา">อาบมันรีดเงา</option><option value="ปั๊ม">ปั๊ม</option><option value="ทั่วไป/แกะ">ทั่วไป/แกะ</option><option value="ขึ้นรูปกล่อง">ขึ้นรูปกล่อง</option><option value="คลังสินค้า">คลังสินค้า</option><option value="บริการลูกค้า">บริการลูกค้า</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-700 mb-1.5">เครื่องจักร / จุดงาน *</label>
+                            <select id="inpMachine" required class="w-full rounded-xl border border-roseLuxury-200 px-3.5 py-2.5 text-sm bg-roseLuxury-50/30">
+                                <option value="">-- เลือกเครื่องจักร --</option>
+                                <optgroup label="เครื่องพิมพ์ (21xx)">
+                                    <option value="2101">2101</option><option value="2102">2102</option><option value="2103">2103</option><option value="2104">2104</option><option value="2015">2015</option><option value="2106">2106</option><option value="2107">2107</option>
+                                </optgroup>
+                                <optgroup label="อาบมัน/รีดเงา (31xx)">
+                                    <option value="3131">3131</option><option value="3132">3132</option><option value="3161">3161</option><option value="3165">3165</option><option value="3166">3166</option>
+                                </optgroup>
+                                <optgroup label="ปั๊ม/ปั๊มนูน/เค (41xx)">
+                                    <option value="4101">4101</option><option value="4102">4102</option><option value="4103">4103</option><option value="4104">4104</option><option value="4105">4105</option><option value="4106">4106</option><option value="4107">4107</option><option value="4108">4108</option>
+                                </optgroup>
+                                <optgroup label="Silk Screen (51xx)">
+                                    <option value="5104">5104</option><option value="5105">5105</option><option value="5106">5106</option>
+                                </optgroup>
+                                <optgroup label="ขึ้นรูป/กาว (61xx)">
+                                    <option value="6101">6101</option><option value="6103">6103</option><option value="6104">6104</option><option value="6106">6106</option><option value="6107">6107</option><option value="6108">6108</option><option value="6109">6109</option><option value="6110">6110</option>
+                                </optgroup>
+                                <optgroup label="ส่วนงานสนับสนุน">
+                                    <option value="คลังสินค้า">คลังสินค้า</option><option value="บริการลูกค้า">บริการลูกค้า</option>
+                                </optgroup>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-700 mb-1.5">เลขที่ใบสั่งผลิต / Job No. *</label>
+                            <input type="text" id="inpJobNo" required placeholder="เช่น JOB-2611-101" class="w-full rounded-xl border border-roseLuxury-200 px-3.5 py-2.5 text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-700 mb-1.5">ลูกค้า / ชื่องาน *</label>
+                            <input type="text" id="inpCustomerJob" required placeholder="เช่น บ.ออร่าสกิน - กล่องครีม" class="w-full rounded-xl border border-roseLuxury-200 px-3.5 py-2.5 text-sm">
+                        </div>
+                        <div class="sm:col-span-2">
+                            <label class="block text-xs font-semibold text-gray-700 mb-1.5">ปัญหาที่พบ *</label>
+                            <input type="text" id="inpDefect" list="defectListOptions" required placeholder="พิมพ์ค้นหาหรือเลือกปัญหา เช่น สีไม่ได้มาตรฐาน, ปั๊มกล่องห่าง..." class="w-full rounded-xl border border-roseLuxury-200 px-3.5 py-2.5 text-sm bg-white">
+                            <datalist id="defectListOptions">
+                                <option value="สีไม่ได้มาตรฐาน"><option value="พิมพ์ไม่ตรง"><option value="สีเลอะ"><option value="ขี้หมึก"><option value="จุดขาว"><option value="รอยชักกระดาษ"><option value="พิมพ์ไม่ติด">
+                                <option value="โค๊ทไม่ได้มาตรฐาน"><option value="ค่าความเงาไม่ได้มาตรฐาน"><option value="กระดาษยับ"><option value="โค๊ทไม่คลุมสี"><option value="เว้นช่องUVไม่ตรงตำแหน่ง"><option value="UVไม่ตรง"><option value="UVเป็นรอย">
+                                <option value="Silk screen ไม่ตรงตำแหน่ง"><option value="silk screenไม่ตรง"><option value="silk screen เป็นรอย">
+                                <option value="ปั๊มไม่ขาด"><option value="ปั๊มไม่ตรง"><option value="เส้นพับแตก"><option value="เส้นพับไม่ได้มาตรฐาน"><option value="ขุุยกระดาษ"><option value="ปั๊มนูนไม่ตรง"><option value="ปั้มนูนไม่ได้มาตรฐาน"><option value="ปั๊มนูนไม่ตรงตำแหน่ง"><option value="ปั๊มเคไม่ตรงตำแหน่ง"><option value="ปั๊มเคไม่ได้มาตรฐาน"><option value="ปั๊มกล่องเกย"><option value="ปั๊มกล่องห่าง">
+                                <option value="กาวร่อน"><option value="กาวติด"><option value="กาวเลอะ"><option value="กาวไม่ตรงตำแหน่ง"><option value="กาวเอียง"><option value="กล่องห่าง"><option value="ติดกล่องเหลื่อม"><option value="งานโค่น">
+                                <option value="กล่องขาด"><option value="กล่องเป็นรอย"><option value="รอยกดทับ"><option value="ลังบรรจุไม่ได้มาตรฐาน">
+                                <option value="ไม่ปฏิบัติตามขั้นตอนปฏิบัติงาน (SOP)"><option value="คัด100%ไม่มีประสิทธิภาพ">
+                            </datalist>
+                        </div>
+                        
+                        <!-- แยกช่องกรอกจำนวนของเสียเป็น แผ่น / ชิ้น -->
+                        <div class="sm:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4 bg-roseLuxury-50/40 p-4 rounded-2xl border border-roseLuxury-200">
+                            <div>
+                                <label class="block text-xs font-semibold text-roseLuxury-900 mb-1.5">จำนวนของเสีย (แผ่น) *</label>
+                                <div class="flex rounded-xl overflow-hidden border border-roseLuxury-300 bg-white shadow-sm">
+                                    <input type="number" id="inpQtySheets" min="0" value="0" class="w-full px-3.5 py-2.5 text-sm focus:outline-none">
+                                    <span class="bg-goldChampagne-100 border-l border-roseLuxury-200 px-4 py-2.5 text-sm font-bold text-roseLuxury-800 flex items-center">แผ่น</span>
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-roseLuxury-900 mb-1.5">จำนวนของเสีย (ชิ้น) *</label>
+                                <div class="flex rounded-xl overflow-hidden border border-roseLuxury-300 bg-white shadow-sm">
+                                    <input type="number" id="inpQtyPieces" min="0" value="0" class="w-full px-3.5 py-2.5 text-sm focus:outline-none">
+                                    <span class="bg-goldChampagne-100 border-l border-roseLuxury-200 px-4 py-2.5 text-sm font-bold text-roseLuxury-800 flex items-center">ชิ้น</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-700 mb-1.5">สถานะ *</label>
+                            <select id="inpStatus" required class="w-full rounded-xl border border-roseLuxury-200 px-3.5 py-2.5 text-sm bg-roseLuxury-50/30">
+                                <option value="รอดำเนินการ">รอดำเนินการ</option><option value="กำลังแก้ไข/คัดแยก">กำลังแก้ไข/คัดแยก</option><option value="แก้ไขแล้ว/ปิดงาน">แก้ไขแล้ว/ปิดงาน</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-700 mb-1.5">ผู้ที่ผลิตงาน *</label>
+                            <input type="text" id="inpOperator" required placeholder="ชื่อช่างประจำเครื่อง" class="w-full rounded-xl border border-roseLuxury-200 px-3.5 py-2.5 text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-700 mb-1.5">ผู้แจ้งข้อมูล (QC) *</label>
+                            <input type="text" id="inpReporter" required placeholder="ชื่อพนักงาน QA" class="w-full rounded-xl border border-roseLuxury-200 px-3.5 py-2.5 text-sm">
+                        </div>
+                        <div class="sm:col-span-2">
+                            <label class="block text-xs font-semibold text-gray-700 mb-1.5">สาเหตุและการแก้ไข</label>
+                            <textarea id="inpCauseAction" rows="2" placeholder="ระบุสาเหตุและแนวทางแก้ไข..." class="w-full rounded-xl border border-roseLuxury-200 px-3.5 py-2.5 text-sm"></textarea>
+                        </div>
+                    </div>
+
+                    <div class="pt-4 border-t border-roseLuxury-100 flex justify-end gap-3">
+                        <button type="submit" id="submitBtn" class="btn-gold-rose text-white px-8 py-2.5 rounded-xl text-sm font-bold shadow-md flex items-center gap-2">
+                            <i data-lucide="save" class="w-4 h-4"></i>
+                            <span>บันทึกส่งข้อมูลเรียลไทม์</span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </section>
+
+        <!-- TAB 3: FULL LOGS -->
+        <section id="view-logs" class="hidden space-y-5">
+            <div class="bg-white rounded-2xl p-5 shadow-luxury border border-roseLuxury-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                <div>
+                    <h2 class="text-lg font-bold text-gray-900">ฐานข้อมูลประวัติทั้งหมด</h2>
+                    <p class="text-xs text-gray-500">แสดงรายการตามตัวกรองที่เลือกในหน้าสรุปข้อมูล</p>
+                </div>
+                <div class="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+                    <input type="text" id="searchLogsInput" onkeyup="renderLogsTable()" placeholder="ค้นหา Job, ชื่องาน, ปัญหา..." class="flex-1 sm:w-64 rounded-xl border border-roseLuxury-200 px-3.5 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-roseLuxury-500">
+                    <button type="button" onclick="fetchSheetData()" class="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold flex items-center gap-1.5 shadow transition shrink-0">
+                        <i data-lucide="refresh-cw" class="w-4 h-4"></i> โหลดข้อมูลใหม่
+                    </button>
+                </div>
+            </div>
+            <div class="bg-white rounded-2xl shadow-luxury border border-roseLuxury-200 overflow-hidden">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-roseLuxury-900 text-white text-xs font-semibold uppercase tracking-wider">
+                                <th class="py-3.5 px-4">วันที่ / กะ</th>
+                                <th class="py-3.5 px-4">แผนก / เครื่อง</th>
+                                <th class="py-3.5 px-4">Job No. / ชื่องาน</th>
+                                <th class="py-3.5 px-4">ปัญหา / สาเหตุ</th>
+                                <th class="py-3.5 px-4 text-right">จำนวนของเสีย</th>
+                                <th class="py-3.5 px-4">ผู้ผลิต</th>
+                                <th class="py-3.5 px-4">ผู้แจ้ง</th>
+                                <th class="py-3.5 px-4">สถานะ</th>
+                            </tr>
+                        </thead>
+                        <tbody id="fullLogsBody" class="divide-y divide-roseLuxury-100 text-sm"></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Google Sheets Setup Modal -->
+    <div id="sheetsModal" class="fixed inset-0 z-50 hidden bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl max-w-xl w-full shadow-2xl border border-roseLuxury-200 overflow-hidden animate-in fade-in zoom-in duration-200">
+            <header class="header-gradient px-6 py-4 text-white flex items-center justify-between">
+                <h3 class="font-bold text-base flex items-center gap-2">
+                    <i data-lucide="settings" class="w-5 h-5 text-goldChampagne-300"></i>
+                    <span>ตั้งค่าลิงก์เชื่อมต่อ Google Sheets Web App</span>
+                </h3>
+                <button type="button" onclick="closeSheetsModal()" class="text-white/80 hover:text-white transition-colors p-1">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </header>
+            <div class="p-6 space-y-4 text-sm text-gray-700">
+                <p>วางลิงก์ <strong>Web App URL</strong> จาก Google Apps Script ของคุณที่นี่ เพื่อเปิดใช้งานโหมดบันทึกและดึงข้อมูลแบบเรียลไทม์:</p>
+                <div>
+                    <label class="block text-xs font-semibold text-gray-700 mb-1">Web App URL (https://script.google.com/.../exec):</label>
+                    <input type="url" id="scriptUrlInput" placeholder="https://script.google.com/macros/s/.../exec" class="w-full px-3.5 py-2.5 rounded-xl border border-roseLuxury-300 text-sm focus:ring-2 focus:ring-roseLuxury-500 bg-roseLuxury-50/50 outline-none transition">
+                </div>
+                <div class="bg-amber-50 border border-amber-200 rounded-xl p-3 text-xs text-amber-800 space-y-1">
+                    <p class="font-bold flex items-center gap-1">
+                        <i data-lucide="alert-circle" class="w-4 h-4 shrink-0"></i>
+                        <span>คำแนะนำการตั้งค่า Google Apps Script:</span>
+                    </p>
+                    <p>ตอนกด Deploy ให้ตั้งค่าสิทธิ์การเข้าถึง (Who has access) เป็น <strong>"ทุกคน (Anyone)"</strong> เสมอ เพื่อให้หน้าเว็บสามารถอ่านและเขียนข้อมูลได้โดยไม่ติดสิทธิ์ล็อกอิน Google</p>
+                </div>
+                <div class="flex justify-between items-center pt-3 border-t border-roseLuxury-100">
+                    <button type="button" onclick="clearScriptUrl()" class="text-xs text-rose-600 hover:underline font-medium transition">ล้างลิงก์ (กลับสู่โหมดตัวอย่าง)</button>
+                    <div class="flex gap-2">
+                        <button type="button" onclick="closeSheetsModal()" class="px-4 py-2 rounded-xl border border-gray-300 text-gray-700 text-xs font-semibold hover:bg-gray-50 transition">ยกเลิก</button>
+                        <button type="button" onclick="saveScriptUrl()" class="btn-gold-rose text-white px-5 py-2 rounded-xl text-xs font-bold shadow transition">บันทึกและเชื่อมต่อ</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript Application Logic -->
+    <script>
+        // ลงทะเบียน ChartDataLabels Plugin
+        Chart.register(ChartDataLabels);
+
+        const STORAGE_KEY_URL = 'kimpai_sheets_webapp_url';
+        let WEB_APP_URL = localStorage.getItem(STORAGE_KEY_URL) || '';
+
+        const MOCK_DATA = [
+            { date: '2026-11-16', shift: 'กะ A', dept: 'พิมพ์สี', machine: '2101', jobNo: 'JOB-2611-088', customerJob: 'บ.ออร่าสกิน - กล่องเซรั่มทอง', defect: 'สีเพี้ยนจากค่ามาตรฐาน', qtySheets: 320, qtyPieces: 0, status: 'แก้ไขแล้ว/ปิดงาน', operator: 'สมชาย', reporter: 'วิภา (QC)', causeAction: 'ปรับค่าหมึก Cyan และล้างผ้ายาง' },
+            { date: '2026-11-16', shift: 'กะ B', dept: 'ปั๊ม', machine: '4102', jobNo: 'JOB-2611-092', customerJob: 'บ.สยามฟู้ด - กล่องขนม', defect: 'ปั๊มไม่ขาด / รอยพับแตก', qtySheets: 180, qtyPieces: 0, status: 'กำลังแก้ไข/คัดแยก', operator: 'มานะ', reporter: 'นภา (QC)', causeAction: 'หนุนแผ่นรองมีดไดคัทใหม่' },
+            { date: '2026-11-15', shift: 'กะ A', dept: 'ขึ้นรูปกล่อง', machine: '6103', jobNo: 'JOB-2611-075', customerJob: 'บ.เฮลท์พลัส - กล่องอาหารเสริม', defect: 'กาวร่อน', qtySheets: 0, qtyPieces: 450, status: 'แก้ไขแล้ว/ปิดงาน', operator: 'กิตติ', reporter: 'วิภา (QC)', causeAction: 'เพิ่มแรงกดลูกกลิ้งและปรับอุณหภูมิกาว' }
+        ];
+
+        let allRecords = [];
+        let filteredRecords = [];
+        let charts = {};
+
+        // เริ่มต้นการทำงานเมื่อโหลดหน้าเว็บสมบูรณ์
+        document.addEventListener('DOMContentLoaded', () => {
+            lucide.createIcons();
+            const dateInput = document.getElementById('inpDate');
+            if (dateInput) dateInput.valueAsDate = new Date();
+            updateConnectionUI();
+            fetchSheetData();
+        });
+
+        // อัปเดตป้ายสถานะการเชื่อมต่อ
+        function updateConnectionUI() {
+            const badge = document.getElementById('syncModeBadge');
+            const setupBtn = document.getElementById('setupSheetsBtn');
+            if (!badge || !setupBtn) return;
+
+            if (WEB_APP_URL) {
+                badge.className = 'px-2.5 py-0.5 text-[11px] font-semibold tracking-wider uppercase rounded-full bg-emerald-500/25 text-emerald-200 border border-emerald-400/40';
+                badge.innerHTML = '🟢 โหมด Google Sheets เรียลไทม์';
+                setupBtn.classList.remove('animate-pulse');
+            } else {
+                badge.className = 'px-2.5 py-0.5 text-[11px] font-semibold tracking-wider uppercase rounded-full bg-amber-500/25 text-amber-200 border border-amber-400/40';
+                badge.innerHTML = '🟡 โหมดข้อมูลตัวอย่าง (คลิกตั้งค่าลิงก์ชีต)';
+                setupBtn.classList.add('animate-pulse');
+            }
+        }
+
+        // ระบบแจ้งเตือน Toast Message
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toastContainer');
+            if (!container) return;
+            const toast = document.createElement('div');
+            const bgClass = type === 'success' ? 'bg-emerald-700 border-emerald-400' : type === 'error' ? 'bg-rose-700 border-rose-400' : 'bg-amber-600 border-amber-300';
+            toast.className = `${bgClass} text-white px-4 py-3 rounded-xl shadow-xl border text-xs font-medium flex items-center gap-2 transition-all duration-300`;
+            toast.innerHTML = `<span>${message}</span>`;
+            container.appendChild(toast);
+            setTimeout(() => { toast.style.opacity = '0'; setTimeout(() => toast.remove(), 300); }, 3500);
+        }
+
+        // ฟังก์ชันสลับแท็บแสดงผล
+        function switchTab(tabName) {
+            ['dashboard', 'form', 'logs'].forEach(t => {
+                const viewEl = document.getElementById(`view-${t}`);
+                const tabEl = document.getElementById(`tab-${t}`);
+                if (viewEl) viewEl.classList.add('hidden');
+                if (tabEl) {
+                    tabEl.className = 'tab-btn flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all bg-white/15 text-white hover:bg-white/25 border border-white/20';
+                }
+            });
+            const targetView = document.getElementById(`view-${tabName}`);
+            const targetTab = document.getElementById(`tab-${tabName}`);
+            if (targetView) targetView.classList.remove('hidden');
+            if (targetTab) {
+                targetTab.className = 'tab-btn active flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all bg-white text-roseLuxury-800 shadow-md';
+            }
+        }
+
+        // ฟังก์ชันควบคุม Google Sheets Modal
+        function openSheetsModal() {
+            const input = document.getElementById('scriptUrlInput');
+            if (input) input.value = WEB_APP_URL || '';
+            const modal = document.getElementById('sheetsModal');
+            if (modal) modal.classList.remove('hidden');
+        }
+
+        function closeSheetsModal() {
+            const modal = document.getElementById('sheetsModal');
+            if (modal) modal.classList.add('hidden');
+        }
+
+        function saveScriptUrl() {
+            const input = document.getElementById('scriptUrlInput');
+            if (!input) return;
+            const url = input.value.trim();
+            if (url && !url.startsWith('https://script.google.com/')) {
+                showToast('กรุณากรอก URL ของ Google Apps Script ให้ถูกต้อง', 'error');
+                return;
+            }
+            WEB_APP_URL = url;
+            if (url) {
+                localStorage.setItem(STORAGE_KEY_URL, WEB_APP_URL);
+                showToast('บันทึกลิงก์เชื่อมต่อสำเร็จ กำลังดึงข้อมูล...', 'success');
+            } else {
+                localStorage.removeItem(STORAGE_KEY_URL);
+                showToast('ล้างลิงก์เรียบร้อย กลับสู่โหมดข้อมูลตัวอย่าง', 'warning');
+            }
+            updateConnectionUI();
+            closeSheetsModal();
+            fetchSheetData();
+        }
+
+        function clearScriptUrl() {
+            const input = document.getElementById('scriptUrlInput');
+            if (input) input.value = '';
+        }
+
+        // ดึงข้อมูลจาก Google Sheets หรือ Mock Data
+        async function fetchSheetData() {
+            if (!WEB_APP_URL) {
+                allRecords = [...MOCK_DATA];
+                populateYearFilter();
+                applyFilters();
+                return;
+            }
+            try {
+                showToast('กำลังซิงค์ข้อมูลจาก Google Sheets...', 'warning');
+                const res = await fetch(WEB_APP_URL);
+                const result = await res.json();
+                const rawList = Array.isArray(result) ? result : (result.data || []);
+                allRecords = rawList.map(row => ({
+                    date: formatDateISO(row.date || row['วันที่พบปัญหา'] || ''),
+                    shift: row.shift || row['กะการทำงาน'] || 'กะ A',
+                    dept: row.dept || row['แผนกที่พบปัญหา'] || '-',
+                    machine: String(row.machine || row['เครื่องจักร'] || '-'),
+                    jobNo: row.jobNo || row['Job No.'] || '-',
+                    customerJob: row.customerJob || row['ลูกค้า / ชื่องาน'] || '-',
+                    defect: row.defect || row['ปัญหาที่พบ'] || '-',
+                    qtySheets: Number(row.qtySheets || row['จำนวนแผ่น'] || 0),
+                    qtyPieces: Number(row.qtyPieces || row['จำนวนชิ้น'] || 0),
+                    status: row.status || row['สถานะ'] || 'รอดำเนินการ',
+                    operator: row.operator || row['ผู้ที่ผลิตงาน'] || '-',
+                    reporter: row.reporter || row['ผู้แจ้งข้อมูล'] || '-',
+                    causeAction: row.causeAction || row['สาเหตุและการแก้ไข'] || ''
+                }));
+                populateYearFilter();
+                applyFilters();
+                showToast(`โหลดข้อมูลสำเร็จ (${allRecords.length} รายการ)`, 'success');
+            } catch (err) {
+                console.error(err);
+                showToast('ไม่สามารถเชื่อมต่อ Google Sheets ได้', 'error');
+            }
+        }
+
+        function formatDateISO(dateVal) {
+            if (!dateVal) return '';
+            const d = new Date(dateVal);
+            if (isNaN(d.getTime())) return String(dateVal).split('T')[0];
+            return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+        }
+
+        // บันทึกฟอร์มข้อมูลใหม่
+        async function handleFormSubmit(e) {
+            e.preventDefault();
+            const submitBtn = document.getElementById('submitBtn');
+            const originalHTML = submitBtn.innerHTML;
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<span>กำลังบันทึก...</span>';
+            }
+
+            const payload = {
+                date: document.getElementById('inpDate').value,
+                shift: document.querySelector('input[name="inpShift"]:checked').value,
+                dept: document.getElementById('inpDept').value,
+                machine: document.getElementById('inpMachine').value,
+                jobNo: document.getElementById('inpJobNo').value.trim(),
+                customerJob: document.getElementById('inpCustomerJob').value.trim(),
+                defect: document.getElementById('inpDefect').value.trim(),
+                qtySheets: Number(document.getElementById('inpQtySheets').value) || 0,
+                qtyPieces: Number(document.getElementById('inpQtyPieces').value) || 0,
+                status: document.getElementById('inpStatus').value,
+                operator: document.getElementById('inpOperator').value.trim(),
+                reporter: document.getElementById('inpReporter').value.trim(),
+                causeAction: document.getElementById('inpCauseAction').value.trim()
+            };
+
+            try {
+                if (WEB_APP_URL) {
+                    await fetch(WEB_APP_URL, {
+                        method: 'POST',
+                        mode: 'no-cors',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                    showToast('บันทึกเข้า Google Sheets เรียบร้อย!', 'success');
+                } else {
+                    showToast('บันทึกในโหมดตัวอย่างเรียบร้อย', 'warning');
+                }
+                allRecords.unshift(payload);
+                document.getElementById('defectForm').reset();
+                document.getElementById('inpDate').valueAsDate = new Date();
+                document.getElementById('inpQtySheets').value = 0;
+                document.getElementById('inpQtyPieces').value = 0;
+                populateYearFilter();
+                applyFilters();
+                switchTab('dashboard');
+            } catch (err) {
+                showToast('เกิดข้อผิดพลาดในการบันทึก', 'error');
+            } finally {
+                if (submitBtn) {
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = originalHTML;
+                }
+                lucide.createIcons();
+            }
+        }
+
+        function populateYearFilter() {
+            const yearSelect = document.getElementById('filterYear');
+            if (!yearSelect) return;
+            const currentVal = yearSelect.value;
+            const years = [...new Set(allRecords.map(r => r.date ? r.date.substring(0, 4) : null).filter(Boolean))].sort().reverse();
+            yearSelect.innerHTML = '<option value="ALL">ทุกปี</option>' + years.map(y => `<option value="${y}">${Number(y) + 543} (${y})</option>`).join('');
+            if (years.includes(currentVal)) yearSelect.value = currentVal;
+        }
+
+        function setDatePreset(preset) {
+            ['ALL', 'TODAY', 'THIS_MONTH'].forEach(p => {
+                const btn = document.getElementById(`preset-${p}`);
+                if (btn) {
+                    btn.className = p === preset
+                        ? 'date-preset-btn px-2.5 py-1 rounded-lg text-xs font-semibold bg-roseLuxury-700 text-white shadow-sm transition'
+                        : 'date-preset-btn px-2.5 py-1 rounded-lg text-xs font-semibold bg-roseLuxury-50 text-roseLuxury-800 hover:bg-roseLuxury-100 border border-roseLuxury-200 transition';
+                }
+            });
+            const today = new Date();
+            const yyyy = String(today.getFullYear());
+            const mm = String(today.getMonth() + 1).padStart(2, '0');
+            const todayStr = `${yyyy}-${mm}-${String(today.getDate()).padStart(2, '0')}`;
+
+            if (preset === 'ALL') {
+                document.getElementById('filterYear').value = 'ALL';
+                document.getElementById('filterMonth').value = 'ALL';
+                applyFilters();
+            } else if (preset === 'THIS_MONTH') {
+                document.getElementById('filterYear').value = yyyy;
+                document.getElementById('filterMonth').value = mm;
+                applyFilters();
+            } else if (preset === 'TODAY') {
+                document.getElementById('filterYear').value = yyyy;
+                document.getElementById('filterMonth').value = mm;
+                applyFilters(todayStr);
+            }
+        }
+
+        function applyFilters(exactDate = null) {
+            const fYear = document.getElementById('filterYear').value;
+            const fMonth = document.getElementById('filterMonth').value;
+            const fDept = document.getElementById('filterDept').value;
+            const fShift = document.getElementById('filterShift').value;
+            const fStatus = document.getElementById('filterStatus').value;
+
+            filteredRecords = allRecords.filter(r => {
+                if (exactDate && r.date !== exactDate) return false;
+                if (fYear !== 'ALL' && (!r.date || !r.date.startsWith(fYear))) return false;
+                if (fMonth !== 'ALL' && (!r.date || r.date.substring(5, 7) !== fMonth)) return false;
+                if (fDept !== 'ALL' && r.dept !== fDept) return false;
+                if (fShift !== 'ALL' && r.shift !== fShift) return false;
+                if (fStatus !== 'ALL' && r.status !== fStatus) return false;
+                return true;
+            });
+
+            const totalBadge = document.getElementById('totalBadgeCount');
+            if (totalBadge) totalBadge.textContent = filteredRecords.length;
+            updateKPIs();
+            updateCharts();
+            renderLogsTable();
+        }
+
+        function updateKPIs() {
+            const total = filteredRecords.length;
+            const shiftA = filteredRecords.filter(r => r.shift === 'กะ A').length;
+            const shiftB = filteredRecords.filter(r => r.shift === 'กะ B').length;
+            const totalSheets = filteredRecords.reduce((sum, r) => sum + (r.qtySheets || 0), 0);
+            const totalPieces = filteredRecords.reduce((sum, r) => sum + (r.qtyPieces || 0), 0);
+            const closedCount = filteredRecords.filter(r => r.status === 'แก้ไขแล้ว/ปิดงาน').length;
+            const resolveRate = total > 0 ? Math.round((closedCount / total) * 100) : 0;
+
+            document.getElementById('kpiTotalCases').textContent = total.toLocaleString();
+            document.getElementById('kpiShiftA').textContent = shiftA.toLocaleString();
+            document.getElementById('kpiShiftB').textContent = shiftB.toLocaleString();
+            document.getElementById('kpiTotalSheets').textContent = totalSheets.toLocaleString();
+            document.getElementById('kpiTotalPieces').textContent = totalPieces.toLocaleString();
+            document.getElementById('kpiResolveRate').textContent = `${resolveRate}%`;
+            document.getElementById('kpiClosedCount').textContent = closedCount.toLocaleString();
+            document.getElementById('kpiPendingCount').textContent = (total - closedCount).toLocaleString();
+        }
+
+        function getTopCounts(key, limit = 7) {
+            const map = {};
+            filteredRecords.forEach(r => {
+                const val = r[key] || 'ไม่ระบุ';
+                map[val] = (map[val] || 0) + 1;
+            });
+            const sorted = Object.entries(map).sort((a, b) => b[1] - a[1]).slice(0, limit);
+            return { labels: sorted.map(i => i[0]), values: sorted.map(i => i[1]) };
+        }
+
+        function updateCharts() {
+            const m = getTopCounts('machine');
+            const d = getTopCounts('defect');
+            const o = getTopCounts('operator');
+            const rep = getTopCounts('reporter');
+
+            renderBarChart('chartMachines', m.labels, m.values, '#BE185D', 'จำนวนเคส');
+            renderBarChart('chartDefects', d.labels, d.values, '#D97706', 'จำนวนเคส', true);
+            renderBarChart('chartOperators', o.labels, o.values, '#9D174D', 'จำนวนเคส');
+            renderBarChart('chartReporters', rep.labels, rep.values, '#B45309', 'จำนวนเคส');
+        }
+
+        function renderBarChart(canvasId, labels, data, color, labelName, horizontal = false) {
+            if (charts[canvasId]) charts[canvasId].destroy();
+            const canvasEl = document.getElementById(canvasId);
+            if (!canvasEl) return;
+            const ctx = canvasEl.getContext('2d');
+            charts[canvasId] = new Chart(ctx, {
+                type: 'bar',
+                data: { labels: labels, datasets: [{ label: labelName, data: data, backgroundColor: color, borderRadius: 8, maxBarThickness: 36 }] },
+                options: {
+                    indexAxis: horizontal ? 'y' : 'x',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        datalabels: { color: '#FFFFFF', font: { family: 'Prompt', weight: 'bold', size: 12 }, formatter: (v) => v > 0 ? v : '' }
+                    },
+                    scales: {
+                        x: { grid: { display: false }, ticks: { font: { family: 'Prompt', size: 11 } } },
+                        y: { beginAtZero: true, ticks: { stepSize: 1, font: { family: 'Prompt', size: 11 } } }
+                    }
+                }
+            });
+        }
+
+        function renderLogsTable() {
+            const tbody = document.getElementById('fullLogsBody');
+            if (!tbody) return;
+            const keyword = (document.getElementById('searchLogsInput')?.value || '').toLowerCase();
+            const displayList = filteredRecords.filter(r =>
+                r.jobNo.toLowerCase().includes(keyword) || r.customerJob.toLowerCase().includes(keyword) ||
+                r.defect.toLowerCase().includes(keyword) || r.machine.toLowerCase().includes(keyword) || r.operator.toLowerCase().includes(keyword)
+            );
+
+            if (displayList.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="8" class="py-8 text-center text-gray-400">ไม่พบข้อมูลตามเงื่อนไขที่เลือก</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = displayList.map(r => {
+                const statusBadge = r.status === 'แก้ไขแล้ว/ปิดงาน' ? 'bg-emerald-100 text-emerald-800 border-emerald-200' :
+                                    r.status === 'กำลังแก้ไข/คัดแยก' ? 'bg-amber-100 text-amber-800 border-amber-200' : 'bg-rose-100 text-rose-800 border-rose-200';
+                return `
+                    <tr class="hover:bg-roseLuxury-50/60 transition">
+                        <td class="py-3 px-4 whitespace-nowrap"><div class="font-semibold text-gray-900">${r.date}</div><span class="text-[11px] px-2 py-0.5 rounded bg-roseLuxury-100 text-roseLuxury-800 font-medium">${r.shift}</span></td>
+                        <td class="py-3 px-4 whitespace-nowrap"><div class="font-medium text-gray-800">${r.dept}</div><div class="text-xs text-gray-500">เครื่อง: ${r.machine}</div></td>
+                        <td class="py-3 px-4"><div class="font-bold text-roseLuxury-800">${r.jobNo}</div><div class="text-xs text-gray-600">${r.customerJob}</div></td>
+                        <td class="py-3 px-4"><div class="font-medium text-gray-900">${r.defect}</div>${r.causeAction ? `<div class="text-xs text-gray-500 mt-0.5">แนวทาง: ${r.causeAction}</div>` : ''}</td>
+                        <td class="py-3 px-4 text-right whitespace-nowrap font-bold text-gray-900">
+                            ${r.qtySheets > 0 ? `${r.qtySheets.toLocaleString()} แผ่น<br>` : ''}
+                            ${r.qtyPieces > 0 ? `${r.qtyPieces.toLocaleString()} ชิ้น` : ''}
+                            ${r.qtySheets === 0 && r.qtyPieces === 0 ? '-' : ''}
+                        </td>
+                        <td class="py-3 px-4 whitespace-nowrap text-gray-700">${r.operator}</td>
+                        <td class="py-3 px-4 whitespace-nowrap text-gray-700">${r.reporter}</td>
+                        <td class="py-3 px-4 whitespace-nowrap"><span class="px-2.5 py-1 rounded-full text-xs font-semibold border ${statusBadge}">${r.status}</span></td>
+                    </tr>
+                `;
+            }).join('');
+        }
+    </script>
+</body>
+</html>
